@@ -196,6 +196,7 @@ namespace Fika.Core
             GetClientConfig();
             SetupConfig();
 
+            new FikaWebsocketReceivePatch().Enable();
             new FikaVersionLabel_Patch().Enable();
             new FikaVersionLabelUpdate_Patch().Enable();
             new DisableReadyButton_Patch().Enable();

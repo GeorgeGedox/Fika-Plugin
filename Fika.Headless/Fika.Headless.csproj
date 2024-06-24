@@ -1,41 +1,15 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
   <Import Project="..\Build.props" />
-
   <PropertyGroup>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
-
-  <!-- targets -->
-  <PropertyGroup>
-    <Configurations>Debug;Release;GoldMaster</Configurations>
-    <DefineConstants Condition="'$(Configuration)' == 'GoldMaster|AnyCPU' ">TRACE;GOLDMASTER</DefineConstants>   
-  </PropertyGroup>
-
-  <ItemGroup>
-    <!-- hide files in vs2022 -->
-    <None Remove="Bundles\Files\newmatchmakerui.bundle" />
-    <None Remove="Bundles\Files\playerui.bundle" />
-    <None Remove="Bundles\Files\senditemmenu.bundle" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <!-- embedded resources -->
-    <EmbeddedResource Include="Bundles\Files\newmatchmakerui.bundle" />
-    <EmbeddedResource Include="Bundles\Files\playerui.bundle" />
-    <None Remove="Bundles\Files\ping.bundle" />
-    <EmbeddedResource Include="Bundles\Files\ping.bundle" />
-    <EmbeddedResource Include="Bundles\Files\senditemmenu.bundle" />
-  </ItemGroup>
-
   <ItemGroup>
     <PackageReference Include="BepInEx.Core" Version="5.*" />
     <PackageReference Include="UnityEngine.Modules" Version="2019.4.39" IncludeAssets="compile" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <!-- These are used by .github/workflows/dotnet-build.yml and when building from non-Windows OS -->
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Fika.Core\Fika.Core.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -64,10 +38,7 @@
       <HintPath>..\References\websocket-sharp.dll</HintPath>
     </Reference>
   </ItemGroup>
-
   <Target Name="PostBuild" AfterTargets="PostBuildEvent" Condition=" '$(OS)' == 'Windows_NT' ">
-    <Exec Command="call ../Properties/build/postbuild-core.bat &quot;$(TargetPath)&quot; &quot;$(ProjectDir)&quot;&#xD;&#xA;copy &quot;$(TargetPath)&quot; &quot;C:\Battlestate Games\SPT\BepInEx\plugins&quot;&#xD;&#xA;copy &quot;$(TargetPath)&quot; &quot;Y:\Users\Attacker\Downloads\SPT\BepInEx\plugins&quot;" />
-    <Exec Condition=" '$(Configuration)|$(Platform)' == 'GoldMaster|AnyCPU' " Command="call ../Properties/build/goldmaster-core.bat" />
+    <Exec Command="copy &quot;$(TargetPath)&quot; &quot;Y:\Users\Attacker\Downloads\SPT\BepInEx\plugins&quot;" />
   </Target>
-
 </Project>
