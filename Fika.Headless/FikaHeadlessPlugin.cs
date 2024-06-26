@@ -16,12 +16,14 @@ using Fika.Core.UI.Custom;
 using Fika.Headless.Patches;
 using HarmonyLib;
 using Newtonsoft.Json;
+using SPT.SinglePlayer.Patches.MainMenu;
 using UnityEngine;
 
 namespace Fika.Headless
 {
     [BepInPlugin("com.project-fika.headless", "Headless", "1.0.0")]
     [BepInDependency("com.fika.core", BepInDependency.DependencyFlags.HardDependency)]
+    [BepInDependency("com.SPT.custom", BepInDependency.DependencyFlags.HardDependency)]
     public class FikaHeadlessPlugin : BaseUnityPlugin
     {
         public static FikaHeadlessPlugin Instance { get; private set; }
@@ -42,13 +44,14 @@ namespace Fika.Headless
             new VRAMPatch2().Enable();
             new VRAMPatch3().Enable();
             new VRAMPatch4().Enable();
+            new BetaLogoPatch().Disable();
             InvokeRepeating("ClearRenderables", 1f, 1f);
         }
 
         // Done every second as a way to minimize processing time
         private void ClearRenderables()
         {
-            Stopwatch sw= Stopwatch.StartNew();
+            Stopwatch sw = Stopwatch.StartNew();
             var renderers = FindObjectsOfType<Renderer>();
             foreach (var renderer in renderers)
             {
@@ -79,7 +82,7 @@ namespace Fika.Headless
                  * eventually the fall time will become great enough to cause us to fall
                 */
                 localPlayerMovementContext.FreefallTime = 0f;
-            }
+                }
 
             ActiveHealthController localPlayerHealthController = localPlayer.ActiveHealthController;
             if (localPlayerHealthController != null)
@@ -102,8 +105,8 @@ namespace Fika.Headless
                     if (healthValue != null)
                     {
                         healthValue.Current = healthValue.Maximum;
-                    }
-                }
+            }
+        }
             }
 
             // Keep headless client high up in the air
@@ -113,36 +116,30 @@ namespace Fika.Headless
 
         public void OnFikaStartRaid(StartDedicatedRequest request)
         {
-            string requestJson = JsonConvert.SerializeObject(request);
-            Logger.LogInfo("Received StartRaidRequest: " + requestJson);
-            bool flag = !Singleton<ClientApplication<ISession>>.Instantiated;
-            if (flag)
+            if (!Singleton<ClientApplication<ISession>>.Instantiated)
             {
                 Logger.LogError("We have not finished loading the main menu");
+                return;
             }
-            else
-            {
-                bool instantiated = Singleton<GameWorld>.Instantiated;
-                if (instantiated)
-                {
-                    Logger.LogError("We are still in raid");
-                }
-                else
-                {
-                    TarkovApplication tarkovApplication = (TarkovApplication)Singleton<ClientApplication<ISession>>.Instance;
-                    ISession session = tarkovApplication.GetClientBackEndSession();
-                    if (!session.LocationSettings.locations.TryGetValue(request.LocationId, out var location))
-                    {
-                        Logger.LogError($"Failed to find location {request.LocationId}");
-                        return;
-                    }
 
-                    Logger.LogInfo($"Starting on location {location.Name}");
-                    RaidSettings raidSettings = Traverse.Create(tarkovApplication).Field<RaidSettings>("_raidSettings").Value;
-                    Logger.LogInfo("Initialized raid settings");
-                    StartCoroutine(BeginFikaStartRaid(request, session, raidSettings, location));
-                }
+            if (!Singleton<GameWorld>.Instantiated)
+            {
+                Logger.LogError("We are still in raid");
+                return;
             }
+
+            TarkovApplication tarkovApplication = (TarkovApplication)Singleton<ClientApplication<ISession>>.Instance;
+            ISession session = tarkovApplication.GetClientBackEndSession();
+            if (!session.LocationSettings.locations.TryGetValue(request.LocationId, out var location))
+            {
+                Logger.LogError($"Failed to find location {request.LocationId}");
+                return;
+            }
+
+            Logger.LogInfo($"Starting on location {location.Name}");
+            RaidSettings raidSettings = Traverse.Create(tarkovApplication).Field<RaidSettings>("_raidSettings").Value;
+            Logger.LogInfo("Initialized raid settings");
+            StartCoroutine(BeginFikaStartRaid(request, session, raidSettings, location));
         }
 
         private IEnumerator BeginFikaStartRaid(StartDedicatedRequest request, ISession session, RaidSettings raidSettings, LocationSettingsClass.Location location)
